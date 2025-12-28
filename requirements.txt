@@ -2,7 +2,6 @@ langchain
 fastapi
 uvicorn
 streamlit
-sqlalchemy
 pinecone 
 langchain-pinecone 
 langchain-groq 
@@ -11,3 +10,8 @@ langchain-huggingface
 langchain-text-splitters
 sentence-transformers
 docling
+pandas
+Pillow
+tabulate
+torch
+python-magic

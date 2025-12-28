@@ -2,15 +2,19 @@ import sys
 import os
 import time
 
-# Ensure we can import from backend
-sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
+# [FIX 3] Robust Pathing
+# Gets the absolute path of the directory containing this script
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Assumes 'rag_engine.py' is in the same folder as this script (backend/)
+# If you run from root, this ensures 'backend' is in path
+sys.path.append(current_dir)
 
 try:
     from rag_engine import chat_with_data
 except ImportError:
-    print("Error: Could not import 'chat_with_data' from 'backend.rag_engine'.")
-    print("Make sure you are running this script from the root directory of your project.")
-    sys.exit(1)
+    # Fallback if running from root and 'backend' is a package
+    sys.path.append(os.path.join(current_dir, '..'))
+    from backend.rag_engine import chat_with_data
 
 # The 15 Edge Questions
 TEST_QUESTIONS = [
@@ -43,7 +47,6 @@ def run_tests():
             start_time = time.time()
             try:
                 # Query the RAG engine
-                # Note: We assume chat_with_data handles its own context/visuals internally
                 response = chat_with_data(question)
             except Exception as e:
                 response = f"[ERROR] Failed to generate response: {str(e)}"

@@ -20,50 +20,53 @@ vectorstore = PineconeVectorStore(
 # Use a high-quality model for the final answer
 llm = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0.3)
 
-def extract_page_number(query):
+def extract_page_numbers(query):
     """
-    Detects if the user is asking for a specific page/slide.
-    Matches: "page 10", "slide 5", "p. 12"
+    Detects multiple page numbers.
+    Matches: "page 10", "slide 5 and 6", "p. 12"
+    Returns a list of integers, e.g., [5, 6]
     """
-    match = re.search(r"(?:page|slide|p\.)\s*(\d+)", query.lower())
-    if match:
-        return int(match.group(1))
-    return None
+    # Find all digits preceded by page indicators
+    matches = re.findall(r"(?:page|slide|p\.)\s*(\d+)", query.lower())
+    if matches:
+        # Convert to distinct integers
+        return list(set(int(m) for m in matches))
+    return []
 
 def chat_with_data(query: str):
     print(f"\n[Query] {query}")
     
     # 1. Check for Targeted Page Search
-    target_page = extract_page_number(query)
+    target_pages = extract_page_numbers(query)
     search_kwargs = {"k": 5} # Fetch top 5 chunks
     
-    if target_page:
-        print(f"      🎯 Targeted Search: Filtering for Slide {target_page}")
-        # Force Pinecone to only return chunks from this specific page
-        search_kwargs["filter"] = {"page_number": {"$eq": target_page}}
+    if target_pages:
+        print(f"      🎯 Targeted Search: Filtering for Slides {target_pages}")
+        # [FIX 5] Use '$in' operator for multi-page filtering
+        search_kwargs["filter"] = {"page_number": {"$in": target_pages}}
 
     # 2. Search Pinecone
     results = vectorstore.similarity_search(query, **search_kwargs)
     
     if not results:
-        if target_page:
-            return f"I looked specifically for Slide {target_page}, but I couldn't find it in the database."
+        if target_pages:
+            return f"I looked specifically for Slides {target_pages}, but I couldn't find them in the database."
         return "I could not find any relevant information in your notes."
 
     # 3. Resolve Context (Page-Centric Deduplication)
-    # We prioritize 'parent_context' (Full Page Text) if available.
     unique_content = set()
     final_context_text = ""
     global_context = ""
 
     for doc in results:
-        # Extract Global Context (just once)
-        if not global_context:
-            global_context = doc.metadata.get("global_context", "")
+        # Extract Global Context (just once, favoring non-empty values)
+        if not global_context and doc.metadata.get("global_context"):
+            global_context = doc.metadata.get("global_context")
 
         # LOGIC:
-        # If 'parent_context' exists, it means the page was split, and this field holds the FULL page text.
-        # If 'parent_context' is empty, it means the page was small and 'page_content' holds the full text.
+        # We prioritize 'parent_context' (Full Page Text) if available.
+        # Note: Since we optimized storage, 'parent_context' might be empty if 
+        # this chunk is not the first one. In that case, we fall back to 'page_content'.
         if "parent_context" in doc.metadata and doc.metadata["parent_context"]:
             content = doc.metadata["parent_context"]
         else:
@@ -72,9 +75,7 @@ def chat_with_data(query: str):
         # Get Page Number
         page_num = doc.metadata.get("page_number", "Unknown")
 
-        # Deduplicate:
-        # If we already added the text for this page, don't add it again.
-        # (This handles the case where multiple chunks match the same split page)
+        # Deduplicate
         if content not in unique_content:
             unique_content.add(content)
             final_context_text += f"\n-- Slide {page_num} --\n{content}\n"
@@ -93,7 +94,7 @@ def chat_with_data(query: str):
     - Answer the user's question primarily using the SPECIFIC NOTES CONTENT.
     - If you encounter text like "[IMAGE ANALYSIS]", treat it as a description of a diagram/image on that slide.
     - If the user asks about a specific slide (e.g., "Explain Slide 47"), focus ONLY on the content labeled "-- Slide 47 --".
-    - Always cite the slide number (e.g., [Slide 5]) at the end of the sentence where you use that information.
+    - Always cite the slide number (e.g., [Slide 5]) at the end of the response.
     - If the information is not in the context, state "I cannot find that information in the provided notes."
     """
     
@@ -111,9 +112,6 @@ def chat_with_data(query: str):
 
 # --- TEST BLOCK ---
 if __name__ == "__main__":
-    # Test 1: General Query
     print(chat_with_data("Explain DDOS"))
-    
-    # Test 2: Specific Page Query (This verifies the filter logic)
     print("--------------------------------------------------")
-    print(chat_with_data("What is the diagram on page 47?"))
+    print(chat_with_data("Compare the diagram on page 47 and page 48"))

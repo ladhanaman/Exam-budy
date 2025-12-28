@@ -29,20 +29,15 @@ load_dotenv()
 # --- CONFIGURATION ---
 INDEX_NAME = os.getenv("INDEX_NAME")
 SUMMARIZER_MODEL = "llama-3.1-8b-instant" 
+# [FIX 6] Updated to a known stable Groq vision model
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 
-# Embedding Model: sentence-transformers/all-MiniLM-L6-v2
-# Max Sequence Length: 256 tokens (~1000 chars)
-# Vector Dimension: 384
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 llm_summarizer = ChatGroq(model_name=SUMMARIZER_MODEL, temperature=0.3)
 vision_model = ChatGroq(model_name=VISION_MODEL, temperature=0.2)
 
 def optimize_image(pil_image, max_dim=768, quality=85):
-    """
-    Optimizes image size and format (JPEG) to save tokens/cost.
-    """
     if max(pil_image.size) > max_dim:
         pil_image.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
     
@@ -54,9 +49,6 @@ def optimize_image(pil_image, max_dim=768, quality=85):
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 def should_process_image(pil_image):
-    """
-    The 'Bouncer': Rejects small icons, lines, or footer logos.
-    """
     w, h = pil_image.size
     if w < 100 or h < 100: return False 
     ratio = w / h
@@ -64,9 +56,6 @@ def should_process_image(pil_image):
     return True
 
 def describe_image(pil_image, page_no):
-    """
-    Sequential Vision Processing (Simple & Reliable).
-    """
     if not should_process_image(pil_image):
         return ""
         
@@ -106,7 +95,6 @@ def process_file_smartly(file_path):
     logger.info(f"Processing: {file_path}")
     doc_result = converter.convert(file_path)
     
-    # --- STEP 1: GATHER CONTENT PAGE-BY-PAGE ---
     page_content_map = {}
     full_text_preview = "" 
 
@@ -116,23 +104,20 @@ def process_file_smartly(file_path):
         if page not in page_content_map:
             page_content_map[page] = ""
 
-        # Handle Content Types
         text_to_add = ""
         
         if item.label == DocItemLabel.PICTURE and hasattr(item, "image"):
             text_to_add = describe_image(item.image.pil_image, page)
-            
         elif item.label == DocItemLabel.TABLE:
             try:
-                df = item.export_to_dataframe()
+            # Pass the 'doc_result.document' as the 'doc' argument
+                df = item.export_to_dataframe(doc=doc_result.document) 
                 if not df.empty:
                     text_to_add = "\n" + df.to_markdown() + "\n"
             except:
                 text_to_add = "\n" + item.text + "\n"
-                
         elif item.label in [DocItemLabel.SECTION_HEADER, DocItemLabel.TITLE]:
              text_to_add = f"\n## {item.text}\n"
-             
         elif hasattr(item, "text") and item.text.strip():
              text_to_add = f"{item.text}\n"
 
@@ -141,13 +126,9 @@ def process_file_smartly(file_path):
         if len(full_text_preview) < 5000:
             full_text_preview += text_to_add
 
-    # --- STEP 2: GLOBAL CONTEXT ---
     global_context = get_global_context(full_text_preview)
     
-    # --- STEP 3: CONDITIONAL CHUNKING (OPTIMIZED) ---
     final_docs = []
-    
-    # OPTIMIZATION: Reduced from 1000 to 800 to fit all-MiniLM-L6-v2 context window
     CHUNK_SIZE = 800
     CHUNK_OVERLAP = 100
     
@@ -159,27 +140,26 @@ def process_file_smartly(file_path):
         page_text = page_content_map[p_num].strip()
         if not page_text: continue
         
-        # CONDITIONAL SPLIT LOGIC:
-        # Check if the page fits in one chunk (with a small buffer)
-        # If yes, 1 chunk. If no, split.
         if len(page_text) <= CHUNK_SIZE:
             chunks = [page_text]
         else:
             chunks = text_splitter.split_text(page_text)
             
         for i, chunk_text in enumerate(chunks):
-            doc = Document(
-                page_content=chunk_text,
-                metadata={
-                    "source": os.path.basename(file_path),
-                    "page_number": p_num,
-                    "chunk_index": i,
-                    "global_context": global_context,
-                    # Optimization: Store full text ONLY if split, saving DB space.
-                    # RAG Engine will check this field first, then fallback to page_content.
-                    "parent_context": page_text if len(chunks) > 1 else "" 
-                }
-            )
+            # [FIX 2 & 7] METADATA OPTIMIZATION
+            # Only store heavy metadata (full page text, global context) in the first chunk
+            # of the sequence to save DB space.
+            metadata = {
+                "source": os.path.basename(file_path),
+                "page_number": p_num,
+                "chunk_index": i,
+                # Store global context only on the very first chunk of the first page (or first chunk of every page if preferred, here we do first chunk of page)
+                "global_context": global_context if i == 0 else "",
+                # Store parent context only on the first chunk of the page
+                "parent_context": page_text if (len(chunks) > 1 and i == 0) else "" 
+            }
+            
+            doc = Document(page_content=chunk_text, metadata=metadata)
             final_docs.append(doc)
 
     return final_docs
@@ -195,6 +175,14 @@ if __name__ == "__main__":
     if not files:
         logger.warning("No PDFs found in uploads/")
     
+    # [FIX 8] BATCH INGESTION
+    # Collect all docs first, then ingest once to avoid reconnecting overhead
+    all_docs = []
     for f in files:
         docs = process_file_smartly(f)
-        ingest(docs)
+        all_docs.extend(docs)
+        
+    if all_docs:
+        ingest(all_docs)
+    else:
+        logger.info("No content to ingest.")

@@ -1,0 +1,137 @@
+Question 1: 1. Describe the relationship between the 'Master', 'Zombie', and 'Server' as depicted in the 'Generic DDOS Attack Diagram'.
+Time Taken: 2.10s
+-------------------- RESPONSE --------------------
+In the 'Generic DDoS Attack Diagram', the relationship between the 'Master', 'Zombie', and 'Server' is as follows: 
+
+* The 'Attacker' controls the 'Masters'. 
+* The 'Masters' control the 'Zombies'. 
+* The 'Zombies' then direct traffic towards the 'Server', overwhelming it and causing a denial-of-service. 
+
+This type of attack is commonly used to disrupt or disable a targeted system or network by flooding it with traffic from multiple sources. [Slide 68.0]
+============================================================
+
+Question 2: 2. According to the comparison table, which is faster: a virus or a worm? Provide the specific example mentioned.
+Time Taken: 0.68s
+-------------------- RESPONSE --------------------
+According to the comparison table, a worm is faster than a virus. The specific example mentioned is the "code red worm" which affected 3 lakh PCs in just 14 hours. [Slide 30.0]
+============================================================
+
+Question 3: 3. What is the exact monetary penalty for 'Failure to furnish information' under the Penalties and Adjudication section of the IT Act?
+Time Taken: 0.59s
+-------------------- RESPONSE --------------------
+The exact monetary penalty for 'Failure to furnish information' is Rs. 1,50,000. [Slide 92.0]
+============================================================
+
+Question 4: 4. List the exact steps to find the 'Number of columns' in a SQL Injection attack using the 'order by' command.
+Time Taken: 1.10s
+-------------------- RESPONSE --------------------
+To find the number of columns in a SQL Injection attack using the 'order by' command, follow these steps:
+
+1. Replace the single quotes(') with 'order by n' statement.
+2. Change the n from 1,2,3,4,,5,6,…n. 
+3. Continue changing the n value until you get an error like 'unknown column'.
+4. The value of n that results in an error is the total number of columns plus one (since you started counting from 1).
+5. Subtract 1 from the n value that resulted in the error to find the actual number of columns.
+
+For example, if you get an error when n = 8, then the number of columns is 8 - 1 = 7.
+
+[Slide 74.0]
+============================================================
+
+Question 5: 5. In the provided C code example for buffer overflow, how does the memcpy() function contribute to the vulnerability?
+Time Taken: 0.99s
+-------------------- RESPONSE --------------------
+The `memcpy()` function in the provided C code example contributes to the buffer overflow vulnerability because it accepts a destination buffer, a source buffer, and the number of bytes to copy. The user specifies the number of bytes that `memcpy()` copies, which can lead to a buffer overflow if the user enters a value that exceeds the size of the destination buffer. 
+
+In the given example, the destination buffer `buf` has a size of 64 bytes, but the user is allowed to specify the number of bytes to copy using `scanf("%d", &bytes)`. If the user enters a value greater than 64, `memcpy()` will copy more bytes than the destination buffer can hold, resulting in a buffer overflow.
+
+This type of buffer overflow vulnerability occurs when a program reads data and then trusts a value from the data in subsequent memory operations on the remaining data, which has turned up with some frequency in image, audio, and other file processing libraries [Slide 80.0].
+============================================================
+
+Question 6: 6. Explain the distinction between 'Digital Signature' (IT Act 2000) and 'Electronic Signature' (IT Act 2008).
+Time Taken: 0.90s
+-------------------- RESPONSE --------------------
+The distinction between 'Digital Signature' (IT Act 2000) and 'Electronic Signature' (IT Act 2008) is that the concept of Electronic Signature is broader than Digital Signature. According to the IT Act 2000, Digital Signature was the term used, whereas the IT Act 2008 amended this term to Electronic Signature. The IT Act 2008 delivers for the verification of Electronic Records by affixing Digital Signature, and also states that verification of electronic record by electronic signature or electronic authentication technique shall be considered reliable [Slide 109.0].
+============================================================
+
+Question 7: 7. List four specific types of documents or transactions to which the IT Act does not apply.
+Time Taken: 0.80s
+-------------------- RESPONSE --------------------
+According to the provided notes, the following are four specific types of documents or transactions to which the IT Act does not apply:
+1. Negotiable Instrument (Other than a cheque) as defined in section 13 of the Negotiable Instruments Act, 1881
+2. A power-of-attorney as defined in section 1A of the Powers-of-Attorney Act, 1882
+3. A trust as defined in section 3 of the Indian Trusts Act, 1882
+4. A will as defined in clause (h) of section 2 of the Indian Succession Act, 1925 including any other testamentary disposition
+
+[Slide 105.0]
+============================================================
+
+Question 8: 8. What is a 'NOP-sled' and how does it help an attacker exploit a stack buffer overflow?
+Time Taken: 0.85s
+-------------------- RESPONSE --------------------
+A 'NOP-sled' is a technique used to exploit a stack buffer overflow. It involves corrupting a large section of the stack with no-op machine instructions, effectively increasing the size of the target area. At the end of the attacker-supplied data, after the no-op instructions, the attacker places an instruction to perform a relative jump to the top of the buffer where the shellcode is located. This collection of no-ops is referred to as the "NOP-sled" because if the return address is overwritten with any address within the no-op region of the buffer, it will "slide" down the no-ops until it is redirected to the actual malicious code by the jump at the end. This technique helps an attacker exploit a stack buffer overflow by solving the problem of finding the exact address of the buffer. [Slide 84.0]
+============================================================
+
+Question 9: 9. What specific offense is covered under Section 66E of the amended IT Act?
+Time Taken: 0.62s
+-------------------- RESPONSE --------------------
+According to the notes, Section 66E of the IT Act covers the offense of "Punishment for violation of privacy". [Slide 99.0]
+============================================================
+
+Question 10: 10. Explain how a SYN Attack uses 'half-open connections' to saturate a server.
+Time Taken: 0.93s
+-------------------- RESPONSE --------------------
+A SYN attack occurs when a host sends a flood of TCP/SYN packets, often with a forged sender address. Each of these packets is handled like a connection request, causing the server to spawn a half-open connection by sending back a TCP/SYN-ACK packet (Acknowledge) and waiting for a packet in response from the sender address (response to the ACK Packet). However, because the sender address is forged, the response never comes. These half-open connections saturate the number of available connections the server can make, keeping it from responding to legitimate requests until after the attack ends. This is a type of connection depletion attack that takes advantage of the fact that many connection-oriented protocols require servers to maintain state information after a connection request is made but before the connection is fully established. [Slide 62.0]
+============================================================
+
+Question 11: 11. Describe the difference between the 'Vessel Image' and the 'Stego Image' based on the RGB values provided in the Steganography example.
+Time Taken: 1.15s
+-------------------- RESPONSE --------------------
+The 'Vessel Image' and the 'Stego Image' are two images used in the process of steganography. The main difference between them is that the 'Vessel Image' is the original image, while the 'Stego Image' is the image with the hidden data embedded into it.
+
+According to the provided RGB values, the 'Vessel Image' has the following color codes: 
+- R198 G99 B59 
+- R209 G124 B65 
+- R215 G135 B70 
+- R214 G129 B72 
+- R223 G152 B64 
+- R227 G168 B78 
+- R227 G171 B86
+
+In contrast, the 'Stego Image' has slightly different color codes, such as:
+- R207 G120 B70
+- R202 G212 B75
+
+The differences in RGB values between the 'Vessel Image' and the 'Stego Image' indicate that the confidential information has been embedded into the 'Stego Image'. However, the changes are subtle, and the two images appear similar, making it difficult to visually detect the hidden data.
+
+[Slide 47.0]
+============================================================
+
+Question 12: 12. What is 'Back Orifice' and what is its primary function as a Backdoor Trojan?
+Time Taken: 0.58s
+-------------------- RESPONSE --------------------
+Back Orifice is an example of a Backdoor Trojan, and its primary function is for remote system administration. [Slide 44.0]
+============================================================
+
+Question 13: 13. How does Blind SQL Injection differ from standard SQL Injection in terms of the feedback the attacker receives?
+Time Taken: 0.85s
+-------------------- RESPONSE --------------------
+Blind SQL Injection differs from standard SQL Injection in that the attacker does not receive direct feedback from the database in the form of error messages or query results. Instead, the attacker must rely on indirect feedback, such as changes in the web application's behavior or content, to determine whether their injected SQL code was successful. This can make Blind SQL Injection more time-consuming and challenging, as the attacker must craft multiple queries to gather information about the database. [Slide 76.0]
+============================================================
+
+Question 14: 14. What specific change did the 2008 Amendment bring regarding the definition of 'Banker's books' in the Third Schedule?
+Time Taken: 0.87s
+-------------------- RESPONSE --------------------
+The 2008 Amendment, as mentioned in the context of the IT Act 2000, brought about a change in the definition of "Banker's-book" in the Third Schedule. This amendment expanded the definition of 'banker's books' to include electronic records, and it also includes the legitimacy of printouts of data stored in a floppy, disc, tape, or any other form of electromagnetic data storage device [Slide 101.0].
+============================================================
+
+Question 15: 15. If a user receives an email that leads to a fake website designed to steal credit card info, is this classified as Phishing or Spoofing in the text?
+Time Taken: 1.07s
+-------------------- RESPONSE --------------------
+According to the notes, this scenario is classified as Phishing. Phishing is described as a method of online ID theft, where attackers steal personal and financial data, and can also infect systems with viruses [Slide 8.0]. The process of phishing involves planning, setup, attack, and collection, where the attacker sends a phony message to the target, often through email or a webpage, to collect data about the target [Slide 9.0]. 
+
+In this scenario, the email leading to a fake website designed to steal credit card info aligns with the description of phishing, as it involves a phony message (the email) intended to collect sensitive information (credit card info) from the target.
+
+[Slide 8.0, Slide 9.0]
+============================================================
+
