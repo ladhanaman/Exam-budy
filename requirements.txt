@@ -1,0 +1,13 @@
+langchain
+fastapi
+uvicorn
+streamlit
+sqlalchemy
+pinecone 
+langchain-pinecone 
+langchain-groq 
+python-dotenv
+langchain-huggingface
+langchain-text-splitters
+sentence-transformers
+docling

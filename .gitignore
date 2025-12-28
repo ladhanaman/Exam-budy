@@ -1,0 +1,5 @@
+.env
+venv/
+.md
+.DS_Store
+*.log
