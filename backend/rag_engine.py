@@ -47,36 +47,26 @@ def analyze_image_on_demand(image_path):
         print(f"Vision Failed: {e}")
         return "[Error analyzing image]"
 
-def chat_with_data(query: str, cram_mode: bool = False):
+def chat_with_data(query: str):
     """
-    Main RAG function.
-    :param cram_mode: If True, restricts answers to ONLY exam-relevant slides.
+    Main RAG function for Exam Prep.
+    Searches the entire knowledge base (Slides + Images).
     """
-    mode_label = "🔥 CRAMMING (Exam Only)" if cram_mode else "📖 NORMAL (All Content)"
-    print(f"\n🤔 User Question: {query} | Mode: {mode_label}")
+    print(f"\n🤔 User Question: {query}")
     
-    # 1. Configure Search Filters
-    search_kwargs = {"k": 3}
+    # 1. Retrieve Top 3 Chunks
+    # We fetch 3 chunks to get enough context
+    results = vectorstore.similarity_search(query, k=3)
     
-    if cram_mode:
-        # This filter forces Pinecone to only return chunks we marked as 'exam_relevance'
-        search_kwargs["filter"] = {"exam_relevance": {"$eq": True}}
-    
-    # 2. Retrieve Top 3 Chunks
-    results = vectorstore.similarity_search(query, **search_kwargs)
-    
-    if not results and cram_mode:
-        return "I couldn't find any 'High Relevance' slides for this topic in your previous exams. Try turning off Cram Mode."
-
     context_text = ""
     visual_context = ""
     
-    # 3. Process Results
+    # 2. Process Results
     for doc in results:
         # Add the text content
         context_text += f"\n-- Slide {doc.metadata.get('page_number')} --\n{doc.page_content}\n"
         
-        # 4. Check for Images (The "Lazy Vision" Step)
+        # 3. Check for Images (The "Lazy Vision" Step)
         if "image_paths" in doc.metadata and doc.metadata["image_paths"]:
             # We only look at the first image of the top result to save time/latency
             img_path = doc.metadata["image_paths"][0]
@@ -85,7 +75,7 @@ def chat_with_data(query: str, cram_mode: bool = False):
             if os.path.exists(img_path):
                 visual_context += analyze_image_on_demand(img_path)
 
-    # 5. Construct Final Prompt
+    # 4. Construct Final Prompt
     final_system_prompt = f"""
     You are an expert Exam Tutor. Answer the user's question using the provided context.
     
@@ -106,14 +96,11 @@ def chat_with_data(query: str, cram_mode: bool = False):
         HumanMessage(content=query)
     ]
     
-    # 6. Generate Answer
+    # 5. Generate Answer
     response = llm.invoke(messages)
     return response.content
 
 # --- TEST AREA ---
 if __name__ == "__main__":
-    # Test 1: Normal Mode
+    # Test: Standard RAG
     print(chat_with_data("Explain Steganography"))
-    
-    # Test 2: Cram Mode (Will likely fail if you haven't run the marker script yet)
-    print(chat_with_data("Explain Steganography", cram_mode=True))
